@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FRESH'UP Drinks — Quiz de la Direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<style>
+  :root{
+    --cream:#FBF6EA;
+    --cream-deep:#F2ECDA;
+    --teal:#0E6E68;
+    --teal-deep:#0A4F4B;
+    --lime:#C7E24E;
+    --coral:#FF7A4D;
+    --coral-deep:#E15E33;
+    --navy:#152C2A;
+    --paper:#FFFFFF;
+    --ok:#3E9A5C;
+    --bad:#D8534B;
+    --radius:22px;
+    /* active service accent, swapped by JS */
+    --accent:#0E6E68;
+    --accent-deep:#0A4F4B;
+    --accent-soft:#0E6E6822;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --cream:#141C1A;
+      --cream-deep:#0E1614;
+      --paper:#1D2825;
+      --navy:#F1F4E9;
+    }
+  }
+  :root[data-theme="dark"]{
+    --cream:#141C1A;
+    --cream-deep:#0E1614;
+    --paper:#1D2825;
+    --navy:#F1F4E9;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--cream);
+    color:var(--navy);
+    font-family:'Work Sans', system-ui, 'Segoe UI', Arial, sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:32px 16px 70px;
+    position:relative;
+    overflow-x:hidden;
+    transition: background .5s ease;
+  }
+
+  /* floating bubbles background */
+  .bubbles{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    overflow:hidden;
+  }
+  .bubble{
+    position:absolute;
+    bottom:-10%;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, var(--accent-soft), transparent 70%);
+    border:1.5px solid var(--accent-soft);
+    animation: rise linear infinite;
+    opacity:0.55;
+  }
+  @keyframes rise{
+    0%{ transform:translateY(0) translateX(0) scale(1); opacity:0; }
+    10%{ opacity:0.5; }
+    100%{ transform:translateY(-115vh) translateX(var(--drift,20px)) scale(1.15); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .bubble{animation:none; display:none;}
+  }
+
+  .app{
+    width:100%;
+    max-width:640px;
+    position:relative;
+    z-index:1;
+  }
+
+  .brandbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand .bottle{
+    width:32px;height:32px;
+    display:block;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,0.12));
+  }
+  .brand span{
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    font-weight:800;
+    font-size:1.2rem;
+    letter-spacing:0.2px;
+    color:var(--teal-deep);
+  }
+  .tag{
+    font-size:0.72rem;
+    font-weight:700;
+    background:var(--navy);
+    color:var(--cream);
+    padding:6px 12px;
+    border-radius:100px;
+    opacity:0.9;
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    transition: transform .2s ease;
+  }
+  .tag.bump{ animation: bump .35s ease; }
+  @keyframes bump{ 0%{transform:scale(1);} 40%{transform:scale(1.18);} 100%{transform:scale(1);} }
+
+  /* route with icons per service */
+  .route{
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+  }
+  .stop{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .stop .ring{
+    width:34px;height:34px;
+    border-radius:50%;
+    background:var(--paper);
+    border:2.5px solid rgba(21,44,42,0.14);
+    display:flex;align-items:center;justify-content:center;
+    font-size:1rem;
+    transition: all .25s ease;
+  }
+  .stop .bar{
+    width:100%;
+    height:5px;
+    border-radius:4px;
+    background:rgba(21,44,42,0.1);
+  }
+  .stop.done .ring{ border-color:var(--accent); background:var(--accent); }
+  .stop.done .bar{ background:var(--accent); }
+  .stop.current .ring{
+    border-color:var(--accent-deep);
+    box-shadow:0 0 0 4px var(--accent-soft);
+    transform:scale(1.08);
+  }
+  .stop.current .bar{ background:var(--accent); }
+
+  .service-label{
+    font-size:0.86rem;
+    font-weight:700;
+    color:var(--accent-deep);
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    transition: color .3s ease;
+  }
+  .service-label .dot{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--accent);
+    flex:none;
+  }
+
+  .card{
+    background:var(--paper);
+    border-radius:var(--radius);
+    padding:32px 28px 26px;
+    box-shadow: 0 1px 2px rgba(20,40,35,0.05), 0 20px 44px -18px rgba(20,40,35,0.28);
+    border:1px solid rgba(20,40,35,0.06);
+    border-top:5px solid var(--accent);
+    animation: cardIn .38s cubic-bezier(.2,.8,.2,1);
+    transition: border-color .3s ease;
+  }
+  @keyframes cardIn{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .card{animation:none;}
+  }
+
+  h1{
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    font-size:2.1rem;
+    line-height:1.12;
+    margin:0 0 10px;
+    color:var(--teal-deep);
+  }
+  .lead{
+    font-size:1.02rem;
+    line-height:1.6;
+    color:var(--navy);
+    opacity:0.85;
+    margin:0 0 22px;
+  }
+
+  .qcount{
+    font-size:0.82rem;
+    font-weight:700;
+    color:var(--accent);
+    margin-bottom:8px;
+    letter-spacing:0.2px;
+  }
+  .question{
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    font-weight:600;
+    font-size:1.34rem;
+    line-height:1.32;
+    margin:0 0 22px;
+    color:var(--navy);
+  }
+
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+    margin-bottom:6px;
+  }
+  .opt{
+    text-align:left;
+    border:2px solid rgba(20,40,35,0.12);
+    background:var(--cream-deep);
+    color:var(--navy);
+    border-radius:15px;
+    padding:14px 18px;
+    font-family:'Work Sans', sans-serif;
+    font-size:1rem;
+    font-weight:500;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, transform .12s ease, box-shadow .15s ease;
+    line-height:1.4;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .opt .letter{
+    width:26px;height:26px;
+    border-radius:8px;
+    background:rgba(21,44,42,0.08);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+    font-size:0.85rem;
+    flex:none;
+    transition: all .15s ease;
+  }
+  .opt:hover:not(:disabled){
+    border-color:var(--accent);
+    transform:translateY(-2px);
+    box-shadow:0 8px 16px -10px var(--accent-soft);
+  }
+  .opt:hover:not(:disabled) .letter{ background:var(--accent-soft); }
+  .opt:disabled{cursor:default;}
+  .opt.correct{
+    border-color:var(--ok);
+    background:rgba(62,154,92,0.14);
+    animation: pop .3s ease;
+  }
+  .opt.correct .letter{ background:var(--ok); color:#fff; }
+  .opt.wrong{
+    border-color:var(--bad);
+    background:rgba(216,83,75,0.12);
+    animation: shake .35s ease;
+  }
+  .opt.wrong .letter{ background:var(--bad); color:#fff; }
+  .opt.reveal-correct{
+    border-color:var(--ok);
+    background:rgba(62,154,92,0.14);
+  }
+  .opt.reveal-correct .letter{ background:var(--ok); color:#fff; }
+  @keyframes pop{
+    0%{ transform:scale(1); } 45%{ transform:scale(1.02); } 100%{ transform:scale(1); }
+  }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-4px); }
+    75%{ transform:translateX(4px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .opt.correct, .opt.wrong{ animation:none; }
+  }
+
+  .feedback{
+    margin-top:16px;
+    padding:15px 17px;
+    border-radius:15px;
+    font-size:0.94rem;
+    line-height:1.55;
+    display:none;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .feedback.show{display:flex; animation: fadeUp .3s ease;}
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+  .feedback.ok{background:rgba(62,154,92,0.12); color:#276A3E;}
+  .feedback.bad{background:rgba(216,83,75,0.1); color:#A3352E;}
+  @media (prefers-color-scheme: dark){
+    .feedback.ok{color:#9BE0AE;}
+    .feedback.bad{color:#F0A29C;}
+  }
+  .feedback .ico{ font-size:1.15rem; line-height:1; flex:none; }
+
+  .actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:22px;
+  }
+  .btn{
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    font-weight:700;
+    font-size:1rem;
+    color:var(--cream);
+    background:var(--accent);
+    border:none;
+    border-radius:100px;
+    padding:13px 28px;
+    cursor:pointer;
+    transition:background .15s ease, transform .12s ease, box-shadow .15s ease;
+    box-shadow: 0 10px 20px -10px var(--accent-soft);
+  }
+  .btn:hover:not(:disabled){ background:var(--accent-deep); transform:translateY(-2px); }
+  .btn:active:not(:disabled){ transform:translateY(0); }
+  .btn:disabled{opacity:0.35; cursor:not-allowed; transform:none; box-shadow:none;}
+  .btn.coral{background:var(--coral); box-shadow:0 10px 20px -10px rgba(255,122,77,0.5);}
+  .btn.coral:hover{background:var(--coral-deep);}
+  .btn.ghost{
+    background:transparent;
+    color:var(--accent-deep);
+    border:2px solid var(--accent);
+    padding:11px 26px;
+    box-shadow:none;
+  }
+  .btn.ghost:hover{background:var(--accent-soft);}
+
+  /* Intro screen */
+  .intro .hero{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:6px;
+  }
+  .intro .hero svg{ width:96px; height:96px; animation: floatY 3.2s ease-in-out infinite; }
+  @keyframes floatY{
+    0%,100%{ transform:translateY(0) rotate(-2deg); }
+    50%{ transform:translateY(-8px) rotate(2deg); }
+  }
+  @media (prefers-reduced-motion: reduce){ .intro .hero svg{animation:none;} }
+
+  .intro h1{ text-align:center; }
+  .intro .lead{ text-align:center; }
+
+  .services{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    margin:22px 0 28px;
+  }
+  .svc{
+    background:var(--cream-deep);
+    border-radius:15px;
+    padding:13px 14px;
+    font-size:0.86rem;
+    font-weight:700;
+    color:var(--navy);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border-left:4px solid var(--svc-color, var(--teal));
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+  }
+  .svc .ico{ font-size:1.2rem; flex:none; }
+
+  .intro .actions{ justify-content:center; }
+
+  /* Results screen */
+  .results{ text-align:center; }
+  .results .trophy{
+    font-size:3rem;
+    margin-bottom:6px;
+    display:block;
+    animation: bounceIn .5s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes bounceIn{
+    0%{ transform:scale(0.4); opacity:0; }
+    60%{ transform:scale(1.1); opacity:1; }
+    100%{ transform:scale(1); }
+  }
+  .results .badge{
+    display:inline-block;
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    font-weight:700;
+    font-size:0.9rem;
+    padding:7px 16px;
+    border-radius:100px;
+    background:var(--lime);
+    color:var(--teal-deep);
+    margin-bottom:14px;
+  }
+  .score-big{
+    font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    font-weight:800;
+    font-size:3.4rem;
+    color:var(--teal-deep);
+    margin:0 0 2px;
+  }
+  .score-sub{
+    font-size:0.94rem;
+    color:var(--navy);
+    opacity:0.78;
+    margin-bottom:24px;
+  }
+  .breakdown{
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+    margin-bottom:26px;
+    text-align:left;
+  }
+  .bd-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .bd-row .ico{ font-size:1.05rem; flex:none; width:20px; text-align:center; }
+  .bd-label{
+    width:140px;
+    font-size:0.83rem;
+    font-weight:600;
+    color:var(--navy);
+    flex:none;
+  }
+  .bd-bar{
+    flex:1;
+    height:11px;
+    border-radius:6px;
+    background:rgba(20,40,35,0.08);
+    overflow:hidden;
+  }
+  .bd-fill{
+    height:100%;
+    border-radius:6px;
+    background:var(--ok);
+    width:0;
+    transition:width .8s cubic-bezier(.2,.8,.2,1);
+  }
+  .bd-fill.low{background:var(--bad);}
+  .bd-fill.mid{background:var(--coral);}
+  .bd-val{
+    width:42px;
+    text-align:right;
+    font-size:0.8rem;
+    font-weight:700;
+    color:var(--navy);
+    opacity:0.75;
+    flex:none;
+  }
+
+  .result-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+
+  .logo-tile{ background:#fff; border-radius:50%; display:block; object-fit:cover; box-shadow:0 2px 6px rgba(0,0,0,0.12); }
+  .brand .logo-tile{ width:38px; height:38px; }
+  .intro .hero .logo-tile{ width:150px; height:150px; animation: floatY 3.2s ease-in-out infinite; box-shadow:0 12px 28px -12px rgba(14,110,104,0.45); }
+  .author{ text-align:center; font-family:'Baloo 2', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; font-weight:600; font-size:1rem; color:var(--teal-deep); margin:-8px 0 18px; }
+  .author b{ font-weight:800; }
+  @media (prefers-reduced-motion: reduce){ .intro .hero .logo-tile{animation:none;} }
+  @media (max-width:480px){ .intro .hero .logo-tile{width:120px;height:120px;} }
+
+
+  .progress{ height:8px; border-radius:6px; background:rgba(21,44,42,0.1); overflow:hidden; margin:-6px 0 20px; }
+  .progress i{ display:block; height:100%; background:var(--accent); border-radius:6px; transition:width .5s cubic-bezier(.2,.8,.2,1); }
+  .streak{ display:inline-block; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:.82rem; color:#fff; background:linear-gradient(135deg,#FF9F43,#FF5E3A); padding:4px 12px; border-radius:100px; margin-left:8px; animation: bump .4s ease; }
+  .name-field{ display:block; margin:0 auto 22px; max-width:320px; }
+  .name-field label{ display:block; font-size:.85rem; font-weight:600; color:var(--teal-deep); margin-bottom:6px; text-align:center; }
+  .name-field input{ width:100%; padding:12px 16px; border-radius:100px; border:2px solid rgba(20,40,35,.15); background:var(--cream-deep); color:var(--navy); font-family:'Work Sans',sans-serif; font-size:1rem; text-align:center; }
+  .name-field input:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 4px rgba(14,110,104,.15); }
+  .note-wrap{ display:inline-flex; align-items:baseline; gap:4px; margin:2px 0 4px; }
+  .note-wrap .note{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:4.6rem; line-height:1; color:var(--teal-deep); }
+  .note-wrap .sur{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:1.6rem; color:var(--coral-deep); }
+  .player{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:1.15rem; color:var(--teal-deep); margin:0 0 6px; }
+  .stars{ font-size:1.8rem; letter-spacing:6px; margin-bottom:8px; }
+  .stars span{ opacity:.18; filter:grayscale(1); transition:all .4s ease; }
+  .stars span.on{ opacity:1; filter:none; }
+  .meta{ font-size:.8rem; opacity:.6; margin-bottom:18px; }
+  .review{ text-align:left; margin:0 0 24px; }
+  .review summary{ cursor:pointer; font-family:'Baloo 2',sans-serif; font-weight:700; color:var(--accent-deep); padding:10px 0; }
+  .rev-item{ background:var(--cream-deep); border-left:4px solid var(--bad); border-radius:12px; padding:12px 14px; margin-bottom:10px; font-size:.88rem; line-height:1.5; }
+  .rev-item b{ display:block; margin-bottom:4px; }
+  .rev-item .good{ color:#276A3E; font-weight:600; }
+  @media (prefers-color-scheme: dark){ .rev-item .good{ color:#9BE0AE; } }
+  .perfect{ text-align:center; padding:12px; font-weight:600; }
+  @media (max-width:480px){ .note-wrap .note{ font-size:3.6rem; } }
+
+  #confetti{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:50;
+  }
+
+  @media (max-width:480px){
+    .card{padding:26px 18px 22px;}
+    h1{font-size:1.6rem;}
+    .question{font-size:1.15rem;}
+    .services{grid-template-columns:1fr;}
+    .bd-label{width:110px; font-size:0.75rem;}
+    .intro .hero svg{width:76px; height:76px;}
+  }
+</style>
+</head>
+<body>
+<div class="bubbles" id="bubbles"></div>
+<canvas id="confetti"></canvas>
+<div class="app" id="app"></div>
+
+<script>
+/* ---------- Data ---------- */
+const SERVICES = [
+  {id:"innovation", label:"Service Innovation", icon:"💡", color:"#6FA83A"},
+  {id:"marketing", label:"Service Marketing", icon:"📈", color:"#2E6FB0"},
+  {id:"commercial", label:"Service Commercial", icon:"🛒", color:"#E1782B"},
+  {id:"relation", label:"Service Relation Client", icon:"🎧", color:"#8A4FBF"},
+  {id:"qualite", label:"Service Qualité", icon:"📋", color:"#C79A1E"},
+  {id:"direction", label:"Réunion de la Direction", icon:"🏆", color:"#0E6E68"},
+];
+
+function accentOf(id){
+  const s = SERVICES.find(s => s.id === id);
+  return s ? s.color : "#0E6E68";
+}
+function hexToRgba(hex, a){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function setAccent(hex){
+  document.documentElement.style.setProperty('--accent', hex);
+  document.documentElement.style.setProperty('--accent-deep', hex);
+  document.documentElement.style.setProperty('--accent-soft', hexToRgba(hex, 0.16));
+}
+
+const QUESTIONS = [
+  {
+    service:"innovation",
+    q:"Avant d'imaginer votre boisson, quelle est la première chose à définir ?",
+    options:[
+      "Le budget publicitaire de l'entreprise",
+      "La clientèle cible, le goût et l'identité du produit",
+      "Le nom du responsable des ventes",
+      "Le nombre d'équipes concurrentes"
+    ],
+    correct:1,
+    exp:"On part toujours du client : à qui s'adresse la boisson, quel goût, puis son identité (nom, slogan, couleurs)."
+  },
+  {
+    service:"innovation",
+    q:"Selon la ressource « Imaginer une boisson qui plaît aux consommateurs », un bon packaging doit être :",
+    options:[
+      "Identique à celui des concurrents",
+      "Le moins cher possible à produire",
+      "Attractif, facile à reconnaître et en lien avec le produit",
+      "Uniquement transparent"
+    ],
+    correct:2,
+    exp:"Le packaging doit être attractif, facile à reconnaître, adapté aux jeunes et cohérent avec le produit."
+  },
+  {
+    service:"innovation",
+    q:"Quel est l'objectif exact confié au Service Innovation ?",
+    options:[
+      "Fixer le prix de vente final du produit",
+      "Concevoir une nouvelle boisson en définissant son identité, son positionnement et son univers visuel",
+      "Gérer les réclamations des premiers clients",
+      "Choisir les lieux de distribution du produit"
+    ],
+    correct:1,
+    exp:"Le dossier de mission N°1 fixe cet objectif : concevoir une boisson qui répond aux attentes de la cible, avec une identité et un univers visuel cohérents."
+  },
+  {
+    service:"innovation",
+    q:"Avant de rendre son travail, la check-list du Service Innovation demande de vérifier que :",
+    options:[
+      "Le nom est original, le goût correspond à la clientèle, le packaging attire le regard et le slogan donne envie d'acheter",
+      "Le produit coûte le moins cher possible à fabriquer",
+      "Le logo utilise uniquement les couleurs de la concurrence",
+      "Le produit ne contient aucun ingrédient naturel"
+    ],
+    correct:0,
+    exp:"La ressource « Imaginer une boisson » liste ces quatre points de vérification avant de rendre le travail."
+  },
+  {
+    service:"innovation",
+    q:"Qui est la responsable du Service Innovation chez Fresh'Up Drinks ?",
+    options:[
+      "Sarah Morel",
+      "Julie Leroy",
+      "Léa Martin",
+      "Thomas Durand"
+    ],
+    correct:2,
+    exp:"Léa Martin, Directrice innovation, est la responsable de service indiquée dans le dossier de mission N°1."
+  },
+  {
+    service:"marketing",
+    q:"Que désignent les « 4P » du plan de marchéage ?",
+    options:[
+      "Produit, Prix, Place, Promotion",
+      "Produit, Publicité, Partenariat, Prix",
+      "Prix, Profit, Personnel, Place",
+      "Produit, Prix, Positionnement, Personnel"
+    ],
+    correct:0,
+    exp:"Les 4P : Produit (que vais-je vendre ?), Prix (combien ?), Place (où ?), Promotion (comment le faire savoir ?)."
+  },
+  {
+    service:"marketing",
+    q:"Une stratégie de « prix premium » a surtout pour objectif de :",
+    options:[
+      "Attirer un maximum de clients grâce à des prix bas",
+      "Donner une image haut de gamme et valoriser la qualité",
+      "Être aligné sur la moyenne du marché",
+      "Vendre à perte pour gagner des parts de marché"
+    ],
+    correct:1,
+    exp:"Le prix premium cible une clientèle prête à payer plus cher pour une image haut de gamme ; le prix bas vise le volume."
+  },
+  {
+    service:"marketing",
+    q:"D'après la ressource « La Place », quel lieu de distribution correspond le mieux à une clientèle « sportifs » ?",
+    options:[
+      "Les salles de sport",
+      "Les festivals et événements",
+      "Les distributeurs automatiques uniquement",
+      "Les salons de coiffure"
+    ],
+    correct:0,
+    exp:"Les sportifs recherchent des boissons adaptées à leur activité : les salles de sport sont donc un lieu de vente pertinent."
+  },
+  {
+    service:"marketing",
+    q:"À quoi sert la « Promotion » dans le plan de marchéage ?",
+    options:[
+      "À fixer le prix final du produit",
+      "À choisir les lieux de vente",
+      "À faire connaître le produit et donner envie de l'acheter",
+      "À décrire uniquement les ingrédients du produit"
+    ],
+    correct:2,
+    exp:"La promotion regroupe les moyens de communication (réseaux sociaux, affiches, dégustations...) pour faire connaître et vendre le produit."
+  },
+  {
+    service:"marketing",
+    q:"D'après le tableau des prix du marché (Ressource 3), quelle boisson est la moins chère ?",
+    options:[
+      "Oasis (1,40 €)",
+      "Monster (2,30 €)",
+      "Prime (2,50 €)",
+      "Red Bull (2,10 €)"
+    ],
+    correct:0,
+    exp:"Sur le tableau comparatif, Oasis affiche le prix le plus bas à 1,40 €."
+  },
+  {
+    service:"marketing",
+    q:"Qui est le responsable du Service Marketing chez Fresh'Up Drinks ?",
+    options:[
+      "Nicolas Petit",
+      "Thomas Durand",
+      "Antoine Berger",
+      "Léa Martin"
+    ],
+    correct:1,
+    exp:"Thomas Durand, Directeur Marketing, est le responsable indiqué dans le dossier de mission N°2."
+  },
+  {
+    service:"commercial",
+    q:"Que signifie la méthode CAB utilisée pour argumenter en vente ?",
+    options:[
+      "Client, Achat, Budget",
+      "Confort, Argent, Bénéfice",
+      "Caractéristique, Avantage, Bénéfice",
+      "Caractéristique, Achat, Bonus"
+    ],
+    correct:2,
+    exp:"CAB = Caractéristique (ce qu'est le produit) → Avantage (ce que ça apporte) → Bénéfice (ce que ça change pour le client)."
+  },
+  {
+    service:"commercial",
+    q:"Un client qui dit « Je veux être le premier à essayer cette nouveauté » correspond à quel mobile SONCASE ?",
+    options:[
+      "Sécurité",
+      "Confort",
+      "Nouveauté",
+      "Argent"
+    ],
+    correct:2,
+    exp:"Le mobile Nouveauté correspond aux clients qui aiment découvrir, tester et être les premiers."
+  },
+  {
+    service:"commercial",
+    q:"Pour répondre à une objection client, la méthode CRAC propose les étapes :",
+    options:[
+      "Créer, Répéter, Analyser, Conclure",
+      "Creuser, Reformuler, Argumenter, Contrôler",
+      "Convaincre, Rassurer, Accueillir, Conclure",
+      "Client, Réclamation, Achat, Contrat"
+    ],
+    correct:1,
+    exp:"CRAC : Creuser l'objection, Reformuler, Argumenter avec une réponse claire, puis Contrôler que le client est satisfait."
+  },
+  {
+    service:"commercial",
+    q:"La règle des « 4x20 » concerne surtout :",
+    options:[
+      "Le calcul du prix de vente",
+      "L'accueil du client (premiers pas, premiers mots, premiers gestes, premières secondes)",
+      "Le pourcentage de clients satisfaits",
+      "Le nombre de canaux de distribution à choisir"
+    ],
+    correct:1,
+    exp:"Les 4x20 : les 20 premiers pas, les 20 cm du visage, les 20 premiers mots, les 20 premières secondes — tout se joue à l'accueil."
+  },
+  {
+    service:"commercial",
+    q:"Parmi les techniques de conclusion de vente, « la bobine » consiste à :",
+    options:[
+      "Proposer directement un produit additionnel",
+      "Récapituler tous les avantages du produit",
+      "Demander au client s'il achète, sans autre argument",
+      "Offrir une réduction immédiate de 50 %"
+    ],
+    correct:1,
+    exp:"La bobine récapitule l'ensemble des avantages évoqués pour emporter la décision du client."
+  },
+  {
+    service:"commercial",
+    q:"Qui est la responsable du Service Commercial chez Fresh'Up Drinks ?",
+    options:[
+      "Julie Leroy",
+      "Léa Martin",
+      "Sarah Morel",
+      "Nicolas Petit"
+    ],
+    correct:2,
+    exp:"Sarah Morel, Responsable des ventes, encadre le Service Commercial dans le dossier de mission N°3."
+  },
+  {
+    service:"relation",
+    q:"Face à une réclamation client, quelle est la première chose à faire ?",
+    options:[
+      "Proposer immédiatement un remboursement",
+      "Écouter attentivement et reformuler le problème",
+      "Transférer directement le client à un autre service",
+      "Expliquer pourquoi le client a tort"
+    ],
+    correct:1,
+    exp:"On écoute, on remercie le client, puis on reformule le problème pour montrer qu'on l'a bien compris — avant de proposer une solution."
+  },
+  {
+    service:"relation",
+    q:"Un message de réponse à une réclamation doit se terminer par :",
+    options:[
+      "Une justification purement technique",
+      "Une formule qui rassure et donne envie au client de revenir",
+      "Une remise en cause du client",
+      "Un simple « au revoir » sans autre précision"
+    ],
+    correct:1,
+    exp:"Une réclamation bien traitée est une occasion de fidéliser : on termine toujours de façon positive."
+  },
+  {
+    service:"relation",
+    q:"Sur quelle plateforme les élèves doivent-ils enregistrer leur réponse orale à la réclamation (1 minute maximum) ?",
+    options:[
+      "Vocaroo",
+      "Spotify",
+      "YouTube",
+      "SoundCloud"
+    ],
+    correct:0,
+    exp:"Le livrable de la mission N°4 est un enregistrement Vocaroo d'une minute maximum."
+  },
+  {
+    service:"relation",
+    q:"Qui est la responsable du Service Relation Client chez Fresh'Up Drinks ?",
+    options:[
+      "Sarah Morel",
+      "Julie Leroy",
+      "Thomas Durand",
+      "Léa Martin"
+    ],
+    correct:1,
+    exp:"Julie Leroy, Responsable Relation Client, encadre cette mission."
+  },
+  {
+    service:"qualite",
+    q:"Un bon questionnaire de satisfaction doit contenir :",
+    options:[
+      "Uniquement des questions ouvertes",
+      "Des questions d'identité, des questions fermées, des questions à échelle et une question ouverte",
+      "Plus de 30 questions pour être complet",
+      "Uniquement des cases à cocher Oui / Non"
+    ],
+    correct:1,
+    exp:"Un bon questionnaire mélange plusieurs formats de questions (identité, fermées, à échelle, ouverte) et reste limité à 8-10 questions."
+  },
+  {
+    service:"qualite",
+    q:"Pour analyser les réponses d'une enquête de satisfaction, il faut :",
+    options:[
+      "Ne regarder que les avis négatifs",
+      "Lire les réponses, compter, calculer des pourcentages et repérer les tendances",
+      "Se fier uniquement à son impression générale",
+      "Attendre les résultats des concurrents"
+    ],
+    correct:1,
+    exp:"La méthode : lire, compter les réponses identiques, calculer des pourcentages, repérer les tendances, puis conclure."
+  },
+  {
+    service:"qualite",
+    q:"Dans l'exemple d'analyse fourni (Ressource 17), quelle est la note moyenne donnée par les clients ?",
+    options:[
+      "3,5 / 5",
+      "4,2 / 5",
+      "2,8 / 5",
+      "5 / 5"
+    ],
+    correct:1,
+    exp:"L'exemple d'analyse indique une note moyenne de 4,2/5, un bon niveau de satisfaction."
+  },
+  {
+    service:"qualite",
+    q:"Qui est le responsable du Service Qualité chez Fresh'Up Drinks ?",
+    options:[
+      "Antoine Berger",
+      "Thomas Durand",
+      "Nicolas Petit",
+      "Sarah Morel"
+    ],
+    correct:2,
+    exp:"Nicolas Petit, Responsable Qualité, encadre la mission d'enquête de satisfaction."
+  },
+  {
+    service:"direction",
+    q:"Combien de temps une équipe dispose-t-elle pour convaincre le jury lors de la présentation finale ?",
+    options:[
+      "2 à 3 minutes",
+      "8 à 10 minutes",
+      "30 minutes",
+      "1 heure"
+    ],
+    correct:1,
+    exp:"La note de mission indique une présentation de 8 à 10 minutes devant la direction."
+  },
+  {
+    service:"direction",
+    q:"Que doit obligatoirement comporter la présentation finale devant la direction ?",
+    options:[
+      "Uniquement le prix du produit",
+      "La boisson, le plan de marchéage, l'argumentaire de vente, le traitement d'une réclamation et les résultats de l'enquête",
+      "Une vidéo publicitaire uniquement",
+      "La liste des équipes concurrentes"
+    ],
+    correct:1,
+    exp:"La présentation doit couvrir l'ensemble du parcours : produit, 4P, vente, relation client et satisfaction."
+  },
+  {
+    service:"direction",
+    q:"Qui est le Directeur Général de Fresh'Up Drinks, destinataire final de votre soutenance ?",
+    options:[
+      "Thomas Durand",
+      "Nicolas Petit",
+      "Antoine Berger",
+      "Julie Leroy"
+    ],
+    correct:2,
+    exp:"Antoine Berger, Directeur Général, signe la note de service et préside la réunion finale."
+  },
+  {
+    service:"direction",
+    q:"D'après la note de service, combien de projets seront finalement retenus par la direction ?",
+    options:[
+      "Tous les projets présentés",
+      "Un seul projet",
+      "Les deux meilleurs projets",
+      "Aucun, ce n'est qu'un exercice sans classement"
+    ],
+    correct:1,
+    exp:"La note de service est claire : « À l'issue de cette mission, une seule équipe verra son projet retenu »."
+  },
+];
+
+const LOGO = "data:image/jpeg;base64,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";
+const AUTEUR = "Marie Frison"; // modifiez ici votre nom
+const LETTERS = ["A","B","C","D"];
+
+/* ---------- State ---------- */
+let current = 0;
+let score = 0;
+let answered = false;
+let streak = 0;
+let playerName = "";
+let wrongList = [];
+const serviceScores = {};
+function resetScores(){
+  SERVICES.forEach(s => serviceScores[s.id] = {correct:0, total:0});
+  QUESTIONS.forEach(q => serviceScores[q.service].total++);
+}
+resetScores();
+
+const app = document.getElementById('app');
+
+/* ---------- Floating bubbles ---------- */
+function spawnBubbles(){
+  const holder = document.getElementById('bubbles');
+  holder.innerHTML = "";
+  const n = window.innerWidth < 500 ? 8 : 14;
+  for (let i=0;i<n;i++){
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    const size = 14 + Math.random()*46;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = (Math.random()*100) + 'vw';
+    b.style.setProperty('--drift', (Math.random()*60 - 30) + 'px');
+    const dur = 9 + Math.random()*10;
+    b.style.animationDuration = dur + 's';
+    b.style.animationDelay = (-Math.random()*dur) + 's';
+    holder.appendChild(b);
+  }
+}
+spawnBubbles();
+window.addEventListener('resize', spawnBubbles);
+
+/* ---------- Confetti ---------- */
+function fireConfetti(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const canvas = document.getElementById('confetti');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const colors = ['#C7E24E','#FF7A4D','#0E6E68','#2E6FB0','#8A4FBF','#C79A1E'];
+  const pieces = Array.from({length:90}, () => ({
+    x: canvas.width/2 + (Math.random()-0.5)*200,
+    y: canvas.height*0.25,
+    vx: (Math.random()-0.5)*9,
+    vy: -Math.random()*9 - 4,
+    size: 5 + Math.random()*6,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    rot: Math.random()*360,
+    vr: (Math.random()-0.5)*14,
+    life: 0
+  }));
+  let frame = 0;
+  function tick(){
+    frame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive = false;
+    pieces.forEach(p => {
+      p.vy += 0.22;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.life++;
+      if (p.y < canvas.height + 20) alive = true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+      ctx.restore();
+    });
+    if (alive && frame < 260){
+      requestAnimationFrame(tick);
+    } else {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  }
+  tick();
+}
+
+/* ---------- Render helpers ---------- */
+function serviceLabel(id){ return SERVICES.find(s => s.id === id)?.label || id; }
+function serviceIcon(id){ return SERVICES.find(s => s.id === id)?.icon || "•"; }
+
+function renderRoute(){
+  const idx = SERVICES.findIndex(s => s.id === QUESTIONS[current]?.service);
+  return `<div class="route">` + SERVICES.map((s,i) => {
+    let cls = "stop";
+    if (i < idx) cls += " done";
+    if (i === idx) cls += " current";
+    return `<div class="${cls}"><div class="ring">${i < idx ? "✓" : s.icon}</div><div class="bar"></div></div>`;
+  }).join("") + `</div>`;
+}
+
+function bottleIcon(color){
+  return `<img class="logo-tile" src="${LOGO}" alt="Logo Fresh'Up Drinks">`;
+}
+
+function renderIntro(){
+  setAccent("#0E6E68");
+  app.innerHTML = `
+    <div class="brandbar">
+      <div class="brand">
+        ${bottleIcon("#0E6E68")}
+        <span>FRESH'UP DRINKS</span>
+      </div>
+      <div class="tag">Dossier confidentiel</div>
+    </div>
+    <div class="card intro">
+      <div class="hero"><img class="logo-tile" src="${LOGO}" alt="Logo Fresh'Up Drinks"></div>
+      <h1>Le quiz de la Direction</h1>
+      <p class="author">Quiz préparé par <b>${AUTEUR}</b></p>
+      <p class="lead">Avant votre soutenance devant le jury, la Direction Générale veut vérifier que chaque équipe maîtrise bien les missions du projet. ${QUESTIONS.length} questions, un service à la fois.</p>
+      <div class="services">
+        ${SERVICES.map(s => `<div class="svc" style="--svc-color:${s.color}"><span class="ico">${s.icon}</span>${s.label}</div>`).join("")}
+      </div>
+      <div class="name-field"><label for="pname">Ton prénom (pour ta note finale)</label><input id="pname" type="text" maxlength="30" placeholder="Ex : Camille" autocomplete="given-name" value="${playerName}"></div>
+      <div class="actions">
+        <button class="btn coral" id="startBtn">Commencer le quiz 🚀</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('startBtn').addEventListener('click', () => {
+    playerName = document.getElementById('pname').value.trim();
+    current = 0; score = 0; answered = false; streak = 0; wrongList = [];
+    resetScores();
+    renderQuestion();
+  });
+}
+
+function renderQuestion(){
+  answered = false;
+  const q = QUESTIONS[current];
+  const accent = accentOf(q.service);
+  setAccent(accent);
+
+  app.innerHTML = `
+    <div class="brandbar">
+      <div class="brand">
+        ${bottleIcon(accent)}
+        <span>FRESH'UP DRINKS</span>
+      </div>
+      <div class="tag" id="scoreTag">Score : ${score}/${QUESTIONS.length}</div>
+    </div>
+    ${renderRoute()}
+    <div class="progress"><i style="width:${(current/QUESTIONS.length)*100}%"></i></div>
+    <div class="service-label"><span class="dot"></span>${serviceIcon(q.service)} ${serviceLabel(q.service)}</div>
+    <div class="card">
+      <div class="qcount">Question ${current + 1} sur ${QUESTIONS.length}</div>
+      <p class="question">${q.q}</p>
+      <div class="options" id="options">
+        ${q.options.map((opt, i) => `<button class="opt" data-i="${i}"><span class="letter">${LETTERS[i]}</span><span>${opt}</span></button>`).join("")}
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <div class="actions">
+        <button class="btn" id="nextBtn" disabled>${current === QUESTIONS.length - 1 ? "Voir mon résultat 🏁" : "Question suivante →"}</button>
+      </div>
+    </div>
+  `;
+
+  const optButtons = Array.from(document.querySelectorAll('.opt'));
+  optButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+      const i = Number(btn.dataset.i);
+      const correct = q.correct;
+      optButtons.forEach(b => b.disabled = true);
+
+      if (i === correct){
+        btn.classList.add('correct');
+        score++; streak++;
+        serviceScores[q.service].correct++;
+      } else {
+        btn.classList.add('wrong');
+        optButtons[correct].classList.add('reveal-correct');
+        streak = 0;
+        wrongList.push({q:q.q, good:q.options[correct], exp:q.exp, service:q.service});
+      }
+
+      const fb = document.getElementById('feedback');
+      fb.classList.add('show', i === correct ? 'ok' : 'bad');
+      const okMsgs = ["Exact !","Bravo !","Bien joué !","Parfait !","Excellent !"];
+      const koMsgs = ["Pas tout à fait.","Presque !","Retiens bien celle-là."];
+      const msg = i === correct ? okMsgs[Math.floor(Math.random()*okMsgs.length)] : koMsgs[Math.floor(Math.random()*koMsgs.length)];
+      fb.innerHTML = `<span class="ico">${i === correct ? "✅" : "💡"}</span><span><b>${msg}</b> ${q.exp}</span>`;
+
+      document.getElementById('nextBtn').disabled = false;
+      const tag = document.getElementById('scoreTag');
+      tag.textContent = `Score : ${score}/${QUESTIONS.length}`;
+      tag.classList.remove('bump'); void tag.offsetWidth; tag.classList.add('bump');
+      const old = document.getElementById('streakTag'); if (old) old.remove();
+      if (streak >= 2){ const s = document.createElement('span'); s.id='streakTag'; s.className='streak'; s.textContent = '🔥 ' + streak + ' d\'affilée'; tag.after(s); }
+    });
+  });
+
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    if (current < QUESTIONS.length - 1){
+      current++;
+      renderQuestion();
+    } else {
+      renderResults();
+    }
+  });
+}
+
+function gradeFor(pct){
+  if (pct >= 90) return {label:"Expert", emoji:"🏆", msg:"Votre équipe maîtrise parfaitement le projet FRESH'UP. La direction est convaincue !"};
+  if (pct >= 70) return {label:"Averti", emoji:"⭐", msg:"Un très bon niveau. Quelques révisions ciblées et la soutenance sera solide."};
+  if (pct >= 45) return {label:"Débrouillé", emoji:"🌱", msg:"Les bases sont là. Relisez les dossiers ressources des missions les moins réussies."};
+  return {label:"Novice", emoji:"📎", msg:"C'est le moment de revoir les fiches ressources avant la présentation devant le jury."};
+}
+
+function renderResults(){
+  setAccent("#0E6E68");
+  const pct = Math.round((score / QUESTIONS.length) * 100);
+  const grade = gradeFor(pct);
+  const note20 = Math.round((score / QUESTIONS.length) * 20 * 2) / 2; // arrondi au 0,5
+  const reviewHtml = wrongList.length
+    ? `<details class="review"><summary>📖 Revoir mes ${wrongList.length} erreur${wrongList.length>1?'s':''}</summary>${wrongList.map(w => `<div class="rev-item"><b>${w.q}</b><span class="good">Bonne réponse : ${w.good}</span><br>${w.exp}</div>`).join("")}</details>`
+    : `<div class="perfect">🎉 Aucune erreur : sans faute !</div>`;
+
+  const rows = SERVICES.map(s => {
+    const d = serviceScores[s.id];
+    const p = d.total ? Math.round((d.correct / d.total) * 100) : 0;
+    const fillClass = p >= 70 ? "" : (p >= 40 ? "mid" : "low");
+    return `
+      <div class="bd-row">
+        <span class="ico">${s.icon}</span>
+        <div class="bd-label">${s.label}</div>
+        <div class="bd-bar"><div class="bd-fill ${fillClass}" data-w="${p}" style="width:0"></div></div>
+        <div class="bd-val">${d.correct}/${d.total}</div>
+      </div>
+    `;
+  }).join("");
+
+  app.innerHTML = `
+    <div class="brandbar">
+      <div class="brand">
+        ${bottleIcon("#0E6E68")}
+        <span>FRESH'UP DRINKS</span>
+      </div>
+      <div class="tag">Terminé</div>
+    </div>
+    <div class="card results">
+      ${playerName ? `<p class="player">${playerName.replace(/</g,'&lt;')}, voici ton résultat</p>` : ""}
+      <div class="trophy">${grade.emoji}</div>
+      <div class="badge">Niveau ${grade.label}</div>
+      <div class="stars">${[1,2,3,4,5].map(n => `<span class="${note20 >= n*4 - 2 ? 'on':''}">⭐</span>`).join("")}</div>
+      <div class="note-wrap"><span class="note" id="noteNum">0</span><span class="sur">/ 20</span></div>
+      <p class="score-sub">${score} bonnes réponses sur ${QUESTIONS.length} (${pct}%) — ${grade.msg}</p>
+      <p class="meta">${new Date().toLocaleDateString('fr-FR')} · Fais une capture d'écran pour la montrer à ton enseignant(e)</p>
+      <div class="breakdown">${rows}</div>
+      ${reviewHtml}
+      <div class="result-actions">
+        <button class="btn coral" id="retryBtn">Refaire le quiz</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('retryBtn').addEventListener('click', renderIntro);
+
+  // compteur animé de la note
+  (function(){
+    const el = document.getElementById('noteNum'); const target = note20; const t0 = performance.now(); const D = 1100;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fmt = v => (Math.round(v*2)/2).toString().replace('.', ',');
+    if (reduce){ el.textContent = fmt(target); return; }
+    function step(now){ const k = Math.min(1,(now-t0)/D); const e = 1-Math.pow(1-k,3); el.textContent = fmt(target*e); if (k<1) requestAnimationFrame(step); else el.textContent = fmt(target); }
+    requestAnimationFrame(step);
+  })();
+
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.bd-fill').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  });
+
+  if (pct >= 70) fireConfetti();
+}
+
+renderIntro();
+</script>
+</body>
+</html>
